@@ -1,10 +1,11 @@
 plugins {
-    id("com.android.application")
-    kotlin("android")
+    id("com.android.application") version "8.1.0"
+    kotlin("android") version "1.9.0"
 }
 
 android {
     compileSdk = 34
+    
     defaultConfig {
         applicationId = "com.viki.spoof"
         minSdk = 24
@@ -19,6 +20,11 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
 }
 
 dependencies {
@@ -26,12 +32,6 @@ dependencies {
     compileOnly("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
     compileOnly("de.robv.android.xposed:api:82")
     
-    // Android Framework
-    compileOnly("android.framework:android-framework:34")
-    
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
-    
-    // Shared Preferences for configuration
-    implementation("androidx.preference:preference-ktx:1.2.0")
 }
