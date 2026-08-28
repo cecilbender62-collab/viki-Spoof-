@@ -1,15 +1,15 @@
 plugins {
-    id("com.android.application") version "8.1.0"
-    kotlin("android") version "1.9.0"
+    id("com.android.application") version "7.4.2"
+    kotlin("android") version "1.8.10"
 }
 
 android {
-    compileSdk = 34
+    compileSdk = 33
     
     defaultConfig {
         applicationId = "com.viki.spoof"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
     }
@@ -25,10 +25,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }
 
 repositories {
@@ -38,9 +34,9 @@ repositories {
 }
 
 dependencies {
-    // Xposed API from JitPack
-    compileOnly("com.github.rovo89:XposedBridgeApi:latest.release")
+    // Xposed API
+    compileOnly("com.github.rovo89:XposedBridgeApi:82")
     
     // Kotlin
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.10")
 }
