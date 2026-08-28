@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.viki.spoof">
+    package="com.viki.spoof" >
 
-    <application>
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name" >
+
         <meta-data
             android:name="xposedmodule"
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="Spoof Android device identifiers" />
+            android:value="Spoof device identifiers" />
         <meta-data
             android:name="xposedmaxversion"
             android:value="*" />
+
     </application>
 
 </manifest>
