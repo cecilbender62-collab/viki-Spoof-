@@ -1,9 +1,5 @@
 package com.viki.spoof
 
-import android.content.Context
-import android.os.Build
-import android.provider.Settings
-import android.telephony.TelephonyManager
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
@@ -78,9 +74,8 @@ class VikiSpoof : IXposedHookLoadPackage {
             "samsung/o1s/o1s:13/TP1A.220624.014/R16NW.G991BXXU2AUJA:user/release-keys"
         )
         
-        // Spoof SERIAL (using reflection as it's a method in newer Android)
+        // Spoof SERIAL
         try {
-            val getSerialMethod = buildClass.getMethod("getSerial")
             XposedHelpers.findAndHookMethod(
                 buildClass,
                 "getSerial",
@@ -91,104 +86,93 @@ class VikiSpoof : IXposedHookLoadPackage {
                 }
             )
         } catch (e: Exception) {
-            // Fallback for older Android versions
             XposedHelpers.setStaticObjectField(buildClass, "SERIAL", generateFakeSerialNumber())
         }
     }
     
     private fun hookAndroidId(lpparam: XC_LoadPackage.LoadPackageParam) {
-        val settingsSecure = lpparam.classLoader.loadClass("android.provider.Settings\$Secure")
-        
-        XposedHelpers.findAndHookMethod(
-            settingsSecure,
-            "getString",
-            android.content.ContentResolver::class.java,
-            String::class.java,
-            object : XposedHelpers.MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    val key = param.args[1] as? String
-                    if (key == "android_id") {
-                        val packageName = lpparam.packageName
-                        param.result = SPOOFED_IDS.getOrPut(packageName) {
-                            generateFakeAndroidId()
-                        }
-                    }
-                }
-            }
-        )
-    }
-    
-    private fun hookTelephonyManager(lpparam: XC_LoadPackage.LoadPackageParam) {
-        val telephonyClass = lpparam.classLoader.loadClass("android.telephony.TelephonyManager")
-        
-        // Hook getDeviceId (IMEI)
-        XposedHelpers.findAndHookMethod(
-            telephonyClass,
-            "getDeviceId",
-            object : XposedHelpers.MethodHook() {
-                override fun replaceHookedMethod(param: MethodHookParam?): Any {
-                    return generateFakeIMEI()
-                }
-            }
-        )
-        
-        // Hook getImei
         try {
-            XposedHelpers.findAndHookMethod(
-                telephonyClass,
-                "getImei",
-                Int::class.java,
-                object : XposedHelpers.MethodHook() {
-                    override fun replaceHookedMethod(param: MethodHookParam?): Any {
-                        return generateFakeIMEI()
-                    }
-                }
-            )
-        } catch (e: Exception) {
-            // Method might not exist on all Android versions
-        }
-        
-        // Hook getDeviceId with slot parameter
-        try {
-            XposedHelpers.findAndHookMethod(
-                telephonyClass,
-                "getDeviceId",
-                Int::class.java,
-                object : XposedHelpers.MethodHook() {
-                    override fun replaceHookedMethod(param: MethodHookParam?): Any {
-                        return generateFakeIMEI()
-                    }
-                }
-            )
-        } catch (e: Exception) {
-            // Method might not exist
-        }
-    }
-    
-    private fun hookWifiManager(lpparam: XC_LoadPackage.LoadPackageParam) {
-        try {
-            val wifiManagerClass = lpparam.classLoader.loadClass("android.net.wifi.WifiManager")
+            val settingsSecureClass = lpparam.classLoader.loadClass("android.provider.Settings\$Secure")
+            val contentResolverClass = lpparam.classLoader.loadClass("android.content.ContentResolver")
             
             XposedHelpers.findAndHookMethod(
-                wifiManagerClass,
-                "getConnectionInfo",
+                settingsSecureClass,
+                "getString",
+                contentResolverClass,
+                String::class.java,
                 object : XposedHelpers.MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        val wifiInfo = param.result
-                        if (wifiInfo != null) {
-                            val wifiInfoClass = lpparam.classLoader.loadClass("android.net.wifi.WifiInfo")
-                            try {
-                                XposedHelpers.setObjectField(wifiInfo, "mMacAddress", generateFakeMACAddress())
-                            } catch (e: Exception) {
-                                // Fallback: hook getMacAddress method
+                        val key = param.args[1] as? String
+                        if (key == "android_id") {
+                            param.result = SPOOFED_IDS.getOrPut(lpparam.packageName) {
+                                generateFakeAndroidId()
                             }
                         }
                     }
                 }
             )
+        } catch (e: Exception) {
+            XposedBridge.log("$TAG: Error hooking Android ID: ${e.message}")
+        }
+    }
+    
+    private fun hookTelephonyManager(lpparam: XC_LoadPackage.LoadPackageParam) {
+        try {
+            val telephonyClass = lpparam.classLoader.loadClass("android.telephony.TelephonyManager")
             
-            // Hook getMacAddress method directly
+            // Hook getDeviceId (IMEI)
+            try {
+                XposedHelpers.findAndHookMethod(
+                    telephonyClass,
+                    "getDeviceId",
+                    object : XposedHelpers.MethodHook() {
+                        override fun replaceHookedMethod(param: MethodHookParam?): Any {
+                            return generateFakeIMEI()
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                // Try with slot parameter
+                try {
+                    XposedHelpers.findAndHookMethod(
+                        telephonyClass,
+                        "getDeviceId",
+                        Int::class.java,
+                        object : XposedHelpers.MethodHook() {
+                            override fun replaceHookedMethod(param: MethodHookParam?): Any {
+                                return generateFakeIMEI()
+                            }
+                        }
+                    )
+                } catch (e2: Exception) {
+                    // Continue if method not found
+                }
+            }
+            
+            // Hook getImei
+            try {
+                XposedHelpers.findAndHookMethod(
+                    telephonyClass,
+                    "getImei",
+                    object : XposedHelpers.MethodHook() {
+                        override fun replaceHookedMethod(param: MethodHookParam?): Any {
+                            return generateFakeIMEI()
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                // Continue if method not found
+            }
+        } catch (e: Exception) {
+            XposedBridge.log("$TAG: Error hooking TelephonyManager: ${e.message}")
+        }
+    }
+    
+    private fun hookWifiManager(lpparam: XC_LoadPackage.LoadPackageParam) {
+        try {
             val wifiInfoClass = lpparam.classLoader.loadClass("android.net.wifi.WifiInfo")
+            
+            // Hook getMacAddress method
             XposedHelpers.findAndHookMethod(
                 wifiInfoClass,
                 "getMacAddress",
@@ -199,7 +183,7 @@ class VikiSpoof : IXposedHookLoadPackage {
                 }
             )
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: Could not hook WifiManager: ${e.message}")
+            XposedBridge.log("$TAG: Could not hook WifiInfo: ${e.message}")
         }
     }
     
