@@ -25,12 +25,21 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+    maven("https://jitpack.io")
 }
 
 dependencies {
-    // LSPosed API
-    compileOnly("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
-    compileOnly("de.robv.android.xposed:api:82")
+    // Xposed API from JitPack
+    compileOnly("com.github.rovo89:XposedBridgeApi:latest.release")
     
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
