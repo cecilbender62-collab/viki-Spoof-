@@ -1,0 +1,7 @@
+id=viki_spoof
+name=Viki Spoof - Identity Changer
+version=1.0
+versionCode=1
+author=cecilbender62-collab
+description=Spoof Android device identifiers including ANDROID_ID, IMEI, Serial, MAC address, Build properties, and GAID
+updateJson=
